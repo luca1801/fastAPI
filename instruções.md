@@ -354,9 +354,15 @@ Esta é a etapa de verificar se tudo correu como esperado. É fácil notar onde 
 
 **Criando o arquivo `.gitignore`**
 
-Vamos iniciar com a criação de um arquivo `.gitignore` específico para Python. Existem diversos modelos disponíveis na internet, como os disponíveis pelo próprio GitHub, ou o gitignore.io. Uma ferramenta útil é a `ignr`, feita em Python, que faz o download automático do arquivo para a nossa pasta de trabalho atual:
+Criado o arquivo `.gitignore` e copiado o conteúdo do arquivo semelhante do projeto original [fastapi-do-zero](https://github.com/dunossauro/fastapi-do-zero/blob/main/.gitignore) 
+
+<!-- Vamos iniciar com a criação de um arquivo `.gitignore` específico para Python. Existem diversos modelos disponíveis na internet, como os disponíveis pelo próprio GitHub, ou o gitignore.io. Uma ferramenta útil é a `ignr`, feita em Python, que faz o download automático do arquivo para a nossa pasta de trabalho atual:
 
 ```bash
 pipx run ignr -p python > .gitignores
 ```
-O `.gitignore` é importante porque ele nos ajuda a evitar que arquivos desnecessários ou sensíveis sejam enviados para o repositório. Isso inclui o ambiente virtual, arquivos de configuração pessoal, entre outros.
+O `.gitignore` é importante porque ele nos ajuda a evitar que arquivos desnecessários ou sensíveis sejam enviados para o repositório. Isso inclui o ambiente virtual, arquivos de configuração pessoal, entre outros. -->
+
+#### Criando um repositório no github
+
+Agora, com nossos arquivos indesejados ignorados, podemos iniciar o versionamento de código usando o `git`. Para criar um repositório local, usamos o comando `git init .`. Para criar esse repositório no GitHub, utilizaremos o gh, um utilitário de linha de comando que nos auxilia nesse processo:
