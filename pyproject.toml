@@ -1,0 +1,51 @@
+[project]
+name = "fast_api"
+version = "0.1.0"
+description = ""
+authors = [{ name = "Your Name", email = "you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.14,<4.0"
+dependencies = ["fastapi[standard] (>=0.122.0,<0.123.0)"]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.1,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "taskipy (>=1.14.1,<2.0.0)",
+    "ruff (>=0.14.6,<0.15.0)",
+]
+
+# Configuração global do Ruff
+[tool.ruff]
+line-length = 79
+extend-exclude = [".venv", "__pycache__", "build", "dist", "migrations"]
+
+# Configuração específica para linting do ruff
+[tool.ruff.lint]
+preview = true
+select = ['I', 'E', 'F', 'W', 'PL', 'PT']
+
+# Confuguração de formatação do ruff
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+# Configuração do pytest
+[tool.pytest.ini_options]
+pyhtonpath = ['./fastAPI']
+addopts = "-p no:warnings"
+
+# Configuração do taskipy
+[tool.taskipy.tasks]
+lint = "ruff check ."
+pre_format = "ruff check . --fix"
+format = "ruff format ."
+run = "fastapi dev fast_api/app.py"
+pre_test = "task lint"
+test = 'pytest -s -x --cov=fast_api -vv'
+post_test = 'coverage html'
