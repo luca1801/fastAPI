@@ -366,3 +366,20 @@ O `.gitignore` é importante porque ele nos ajuda a evitar que arquivos desneces
 #### Criando um repositório no github
 
 Agora, com nossos arquivos indesejados ignorados, podemos iniciar o versionamento de código usando o `git`. Para criar um repositório local, usamos o comando `git init .`. Para criar esse repositório no GitHub, utilizaremos o gh, um utilitário de linha de comando que nos auxilia nesse processo:
+
+```bash
+git init .
+gh repo create
+git add .
+git commit -m "Configuração inicial do projeto"
+git push
+```
+
+Ao executar `gh repo create`, algumas informações serão solicitadas, como o nome do repositório e se ele será público ou privado. Isso irá criar um repositório tanto localmente quanto no GitHub.
+
+
+Com o repositório pronto, vamos versionar nosso código. Primeiro, adicionamos o código ao próximo commit com `git add .`. Em seguida, criamos um ponto na história do projeto com` git commit -m "Configuração inicial do projeto"`. Por fim, sincronizamos o repositório local com o remoto no GitHub usando `git push`
+
+```
+Obs: Caso seja a primeira vez que está utilizando o git push, talvez seja necessário configurar suas credenciais(nome, email) do GitHub.
+```

@@ -46,6 +46,6 @@ lint = "ruff check ."
 pre_format = "ruff check . --fix"
 format = "ruff format ."
 run = "fastapi dev fast_api/app.py"
-pre_test = "task lint"
+pre_test = "task lint --fix"
 test = 'pytest -s -x --cov=fast_api -vv'
 post_test = 'coverage html'
