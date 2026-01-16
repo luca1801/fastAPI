@@ -1,0 +1,43 @@
+# Importa asdict para converter objetos dataclass em dicionários
+from dataclasses import asdict
+
+# Importa select do SQLAlchemy para criar queries de seleção no banco de dados
+from sqlalchemy import select
+
+# Importa o módulo de modelos de usuários para usar na criação de usuários
+from fast_api.models import users
+
+
+# Função de teste que valida a criação de um novo usuário no banco de dados
+def teste_criar_usuario_deve_retornar_usuario_criado(
+    session_init,  # Fixture que fornece uma sessão do banco de dados em memória
+    mock_db_time,  # Fixture que fornece a função para mockar a data de criação
+):
+    # Ativa o mock de data/hora para a classe UserBase com data padrão (2026-01-01)
+    with mock_db_time(model=users.UserBase) as time:
+        # Cria um novo usuário com os dados de teste
+        new_user = users.UserBase(
+            username='testuser',
+            email='testuser@example.com',
+            password='testpassword',
+        )
+
+        # Adiciona o novo usuário à sessão do banco de dados
+        session_init.add(new_user)
+        # Confirma a transação e persiste o usuário no banco de dados
+        session_init.commit()
+
+        # Busca o usuário criado no banco de dados usando uma query SELECT
+        user = session_init.scalar(
+            # Seleciona o usuário com username igual a 'testuser'
+            select(users.UserBase).where(users.UserBase.username == 'testuser')
+        )
+
+        # Valida que o usuário foi criado com os dados corretos
+        assert asdict(user) == {
+            'id': 1,  # ID esperado (primeira inserção no banco de testes)
+            'username': 'testuser',  # Nome de usuário fornecido
+            'email': 'testuser@example.com',  # Email fornecido
+            'password': 'testpassword',  # Senha fornecida
+            'created_at': time,  # Data de criação mockada (2026-01-01)
+        }
