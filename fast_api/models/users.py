@@ -1,12 +1,12 @@
 from datetime import datetime
 
 from sqlalchemy import func
-from sqlalchemy.orm import Mapped, mapped_column, registry
+from sqlalchemy.orm import Mapped, mapped_as_dataclass, mapped_column, registry
 
 table_registry = registry()
 
 
-@table_registry.mapped_as_dataclass
+@mapped_as_dataclass(table_registry)
 class UserBase:
     __tablename__ = 'users'
 
@@ -19,3 +19,9 @@ class UserBase:
     created_at: Mapped[datetime] = mapped_column(
         init=False, server_default=func.now()
     )
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     init=False, server_default=func.now(), onupdate=func.now()
+    # )
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     init=False, default=datetime.now, onupdate=lambda: datetime.now()
+    # )

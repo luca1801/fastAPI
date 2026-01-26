@@ -10,10 +10,13 @@ from fast_api.models import users
 
 # Função de teste que valida a criação de um novo usuário no banco de dados
 def teste_criar_usuario_deve_retornar_usuario_criado(
-    session_init,  # Fixture que fornece uma sessão do banco de dados em memória
-    mock_db_time,  # Fixture que fornece a função para mockar a data de criação
+    # Fixture que fornece uma sessão do banco de dados em memória
+    session_init,
+    # Fixture que fornece a função para mockar a data de criação
+    mock_db_time,
 ):
-    # Ativa o mock de data/hora para a classe UserBase com data padrão (2026-01-01)
+    # Ativa o mock de data/hora para a classe UserBase com
+    # data padrão (2026-01-01)
     with mock_db_time(model=users.UserBase) as time:
         # Cria um novo usuário com os dados de teste
         new_user = users.UserBase(
@@ -27,7 +30,8 @@ def teste_criar_usuario_deve_retornar_usuario_criado(
         # Confirma a transação e persiste o usuário no banco de dados
         session_init.commit()
 
-        # Busca o usuário criado no banco de dados usando uma query SELECT
+        # Busca o usuário criado no banco de dados usando uma
+        # query SELECT
         user = session_init.scalar(
             # Seleciona o usuário com username igual a 'testuser'
             select(users.UserBase).where(users.UserBase.username == 'testuser')
