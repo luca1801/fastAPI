@@ -2,14 +2,6 @@ from http import HTTPStatus
 
 from fast_api.schemas.schemas import UserSchemaPublic
 
-# def teste_root_deve_retornar_hello_world(client):
-#     # client = TestClient(app)  # Arrange
-
-#     response = client.get('/')  # Act
-
-#     assert response.status_code == HTTPStatus.OK  # Assert
-#     assert response.json() == {'message': 'Hello World!'}  # Assert
-
 
 def teste_criar_usuario_deve_retornar_usuario_criado(client):
     # client = TestClient(app)  # Arrange
@@ -30,31 +22,28 @@ def teste_criar_usuario_deve_retornar_usuario_criado(client):
     assert response.json() == usuario_response  # Assert
 
 
-def teste_listar_usuarios_deve_retornar_lista_de_usuarios(client):
-
-    response = client.get('/users/')  # Act
-    assert response.status_code == HTTPStatus.OK  # Assert
-    assert response.json() == {'users': []}  # Assert
-
-
-def teste_listar_usuarios_com_dados_retorna_lista_de_usuarios(
-    client, create_user
-):
-
+def teste_deve_listar_usuarios(client, create_user, generate_token):
+    # create_user.user = create_user('lucas', 'lucas@gmail.com', 'secret')
+    # generate_token.user.username = 'lucas'
+    # generate_token.user.password = 'secret'
     user_schema = UserSchemaPublic.model_validate(
-        create_user('lucas', 'lucas@gmail.com', 'secret')
+        generate_token[0]
     ).model_dump()
-    response = client.get('/users/')  # Act
+    response = client.get(
+        '/users/',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+    )  # Act
     assert response.status_code == HTTPStatus.OK  # Assert
     assert response.json() == {'users': [user_schema]}  # Assert
 
 
 def teste_atualizar_usuario_deve_retornar_usuario_atualizado(
-    client, create_user
+    client, create_user, generate_token
 ):
-    create_user('lucas', 'lucas@gmail.com', 'secret')
+    # create_user('lucas', 'lucas@gmail.com', 'secret')
     response = client.put(
         '/users/1',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
             'username': 'Lucas Silva',
             'email': 'lucas.silva@gmail.com',
@@ -71,18 +60,25 @@ def teste_atualizar_usuario_deve_retornar_usuario_atualizado(
 
     response = client.put(
         '/users/2',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
             'username': 'Lucas Silva',
             'email': 'lucas.silva@gmail.com',
             'password': 'newsecret',
         },
     )  # Act
-    assert response.status_code == HTTPStatus.NOT_FOUND  # Assert
+    assert response.status_code == HTTPStatus.UNAUTHORIZED  # Assert
 
 
-def teste_deletar_usuario_deve_retornar_usuario_deletado(client, create_user):
-    create_user('lucas', 'lucas@gmail.com', 'secret')
-    response = client.delete('/users/1')  # Act
+def teste_deletar_usuario_deve_retornar_usuario_deletado(
+    client, generate_token
+):
+    # create_user('lucas', 'lucas@gmail.com', 'secret')
+    # deletar o usuario criado na fixture generate_token
+    response = client.delete(
+        f'/users/{generate_token[0].id}',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+    )  # Act
 
     assert response.status_code == HTTPStatus.OK  # Assert
     assert response.json() == {
@@ -90,25 +86,28 @@ def teste_deletar_usuario_deve_retornar_usuario_deletado(client, create_user):
     }  # Assert
 
     response = client.delete('/users/2')  # Act
-    assert response.status_code == HTTPStatus.NOT_FOUND  # Assert
+    assert response.status_code == HTTPStatus.UNAUTHORIZED  # Assert
 
 
-def teste_update_erro_integridade_usuario_ja_existe(client, create_user):
-    create_user('lucas', 'lucas@gmail.com', 'secret')
+def teste_update_erro_integridade_usuario_ja_existe(client, generate_token):
+    # create_user('lucas', 'lucas@gmail.com', 'secret')
+    # adiciona outro usuario para gerar conflito
     client.post(
         '/users',
         json={
-            'username': 'maria',
-            'email': 'maria@gmail.com',
-            'password': 'secret',
+            'username': 'fausto',
+            'email': 'fausto@example.com',
+            'password': 'testpassword',
         },
     )
+    # tenta atualizar o usuario criado na fixture generate_token
     response = client.put(
-        '/users/1',
+        f'/users/{generate_token[0].id}',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'maria',
-            'email': 'maria@gmail.com',
-            'password': 'newsecret',
+            'username': 'fausto',
+            'email': 'testuser2@example.com',
+            'password': 'testpassword',
         },
     )  # Act
 
@@ -116,3 +115,53 @@ def teste_update_erro_integridade_usuario_ja_existe(client, create_user):
     assert response.json() == {
         'detail': 'Username or email already exists'
     }  # Assert
+
+
+def teste_login_usuario_deve_retornar_token(client, create_user):
+    user = create_user('lucas', 'lucas@gmail.com', 'secret')
+    response = client.post(
+        '/users/token',
+        data={
+            'username': user.email,
+            'password': user.clean_password,
+        },
+    )  # Act
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK  # Assert
+    assert 'access_token' in token  # Assert
+    assert token['token_type'] == 'bearer'  # Assert
+
+
+def teste_criar_usuario_deve_retornar_erro_para_usuario_existente(
+    client, generate_token
+):
+    response = client.post(
+        '/users',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+        json={
+            'username': 'testuser',
+            'email': 'testuser2@example.com',
+            'password': 'testpassword',
+        },
+    )  # Act
+
+    assert response.status_code == HTTPStatus.CONFLICT  # Assert
+    assert response.json() == {'detail': 'Username already exists'}  # Assert
+
+
+def teste_criar_usuario_deve_retornar_erro_para_email_existente(
+    client, generate_token
+):
+    response = client.post(
+        '/users',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+        json={
+            'username': 'testuser2',
+            'email': 'testuser@example.com',
+            'password': 'testpassword',
+        },
+    )  # Act
+
+    assert response.status_code == HTTPStatus.CONFLICT  # Assert
+    assert response.json() == {'detail': 'Email already exists'}  # Assert

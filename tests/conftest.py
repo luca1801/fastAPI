@@ -23,6 +23,7 @@ from fast_api.database.database import get_session
 
 # Importa o registry de tabelas para criar as tabelas no banco de dados
 from fast_api.models.users import UserBase, table_registry
+from fast_api.security.security import get_password_hash
 
 
 # Função que inicializa uma sessão de BD para testes
@@ -115,11 +116,26 @@ def create_user(session_init: Session):
         new_user = UserBase(
             username=username,
             email=email,
-            password=password,
+            password=get_password_hash(password),
         )
+
         session_init.add(new_user)
         session_init.commit()
         session_init.refresh(new_user)
+        new_user.clean_password = password
         return new_user
 
     return _create_user
+
+
+@pytest.fixture
+def generate_token(client, create_user):
+    user = create_user('testuser', 'testuser@example.com', 'testpassword')
+    response = client.post(
+        '/users/token',
+        data={
+            'username': user.email,
+            'password': user.clean_password,
+        },
+    )
+    return user, response.json()['access_token']
