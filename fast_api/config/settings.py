@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     # Variável de ambiente para chave secreta
     # SECRET_KEY: str
 
+    # Variável de ambiente para algoritmo de criptografia
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
 
 # Cria uma instância global das configurações
 settings = Settings()

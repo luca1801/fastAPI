@@ -1,7 +1,7 @@
 from http import HTTPStatus
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -9,21 +9,21 @@ from sqlalchemy.orm import Session
 from fast_api.database.database import get_session
 from fast_api.models.users import UserBase
 from fast_api.schemas.schemas import (
+    FilterPage,
     MessageSchema,
-    Token,
     UserList,
     UserSchema,
     UserSchemaPublic,
 )
 from fast_api.security.security import (
-    create_access_token,
     get_current_user,
     get_password_hash,
-    verify_password,
 )
 
 router = APIRouter(prefix='/users', tags=['users'])
 
+T_Session = Annotated[Session, Depends(get_session)]
+T_Current_User = Annotated[UserBase, Depends(get_current_user)]
 
 # Definindo um endpoint com o endereço / acessível pelo método HTTP GET
 # @router.get('/', status_code=HTTPStatus.OK, response_model=MessageSchema)
@@ -39,10 +39,7 @@ router = APIRouter(prefix='/users', tags=['users'])
 @router.post(
     '/', status_code=HTTPStatus.CREATED, response_model=UserSchemaPublic
 )
-def create_user(
-    user: UserSchema,
-    session: Session = Depends(get_session),
-):
+def create_user(user: UserSchema, session: T_Session):
     # session = next(get_session())
     db_user = session.scalar(
         select(UserBase).where(
@@ -52,7 +49,6 @@ def create_user(
     )
     if db_user:
         if db_user.username == user.username:
-            print(db_user.username)
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail='Username already exists',
@@ -87,12 +83,13 @@ def create_user(
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
 def get_users(
-    limit: int = 10,
-    offset: int = 0,
-    session: Session = Depends(get_session),
-    current_user=Depends(get_current_user),
+    session: T_Session,
+    current_user: T_Current_User,
+    filter_users: Annotated[FilterPage, Query()],
 ):
-    users = session.scalars(select(UserBase).limit(limit).offset(offset)).all()
+    users = session.scalars(
+        select(UserBase).limit(filter_users.limit).offset(filter_users.offset)
+    ).all()
     # users = UserList.model_validate(users)
     return {'users': users}
 
@@ -105,8 +102,8 @@ def get_users(
 def update_user(
     user: UserSchema,
     user_id: int,
-    session: Session = Depends(get_session),
-    current_user: UserBase = Depends(get_current_user),
+    session: T_Session,
+    current_user: T_Current_User,
 ):
     if current_user.id != user_id:
         raise HTTPException(
@@ -136,8 +133,8 @@ def update_user(
 )
 def delete_user(
     user_id: int,
-    session: Session = Depends(get_session),
-    current_user: UserBase = Depends(get_current_user),
+    session: T_Session,
+    current_user: T_Current_User,
 ):
     if current_user.id != user_id:
         raise HTTPException(
@@ -151,26 +148,26 @@ def delete_user(
 
 # Oauth2 é um protocolo aberto para autorização, para esquema
 # de credenciais, o fastiapi conta com o OAuth2PasswordRequestForm
-@router.post('/token', response_model=Token)
-def login_for_acess_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session: Session = Depends(get_session),
-):
-    user = session.scalar(
-        select(UserBase).where(UserBase.email == form_data.username)
-    )
+# @router.post('/token', response_model=Token)
+# def login_for_acess_token(
+#     form_data: OAuth2PasswordRequestForm = Depends(),
+#     session: Session = Depends(get_session),
+# ):
+#     user = session.scalar(
+#         select(UserBase).where(UserBase.email == form_data.username)
+#     )
 
-    if not user:
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED,
-            detail='Incorrect username or password',
-            headers={'WWW-Authenticate': 'Bearer'},
-        )
-    if not verify_password(form_data.password, user.password):
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED,
-            detail='Incorrect username or password',
-            headers={'WWW-Authenticate': 'Bearer'},
-        )
-    access_token = create_access_token(data={'sub': user.email})
-    return {'access_token': access_token, 'token_type': 'bearer'}
+#     if not user:
+#         raise HTTPException(
+#             status_code=HTTPStatus.UNAUTHORIZED,
+#             detail='Incorrect username or password',
+#             headers={'WWW-Authenticate': 'Bearer'},
+#         )
+#     if not verify_password(form_data.password, user.password):
+#         raise HTTPException(
+#             status_code=HTTPStatus.UNAUTHORIZED,
+#             detail='Incorrect username or password',
+#             headers={'WWW-Authenticate': 'Bearer'},
+#         )
+#     access_token = create_access_token(data={'sub': user.email})
+#     return {'access_token': access_token, 'token_type': 'bearer'}

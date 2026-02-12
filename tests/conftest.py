@@ -19,6 +19,7 @@ from sqlalchemy.pool import StaticPool
 
 # Importa a aplicação FastAPI principal
 from fast_api.app import app
+from fast_api.config.settings import settings
 from fast_api.database.database import get_session
 
 # Importa o registry de tabelas para criar as tabelas no banco de dados
@@ -132,10 +133,15 @@ def create_user(session_init: Session):
 def generate_token(client, create_user):
     user = create_user('testuser', 'testuser@example.com', 'testpassword')
     response = client.post(
-        '/users/token',
+        '/auth/token',
         data={
             'username': user.email,
             'password': user.clean_password,
         },
     )
     return user, response.json()['access_token']
+
+
+@pytest.fixture
+def Settings():
+    return settings

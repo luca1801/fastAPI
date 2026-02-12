@@ -2,17 +2,15 @@ from http import HTTPStatus
 
 from jwt import decode
 
-from fast_api.security.security import (
-    ALGORITHM,
-    SECRET_KEY,
-    create_access_token,
-)
+from fast_api.security.security import create_access_token
 
 
-def teste_login_deve_retornar_token_de_acesso():
+def teste_login_deve_retornar_token_de_acesso(Settings):
     data = {'test': 'test'}
     access_token = create_access_token(data=data)
-    decoded_token = decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded_token = decode(
+        access_token, Settings.SECRET_KEY, algorithms=[Settings.ALGORITHM]
+    )
 
     assert decoded_token['test'] == data['test']
     assert 'exp' in decoded_token
