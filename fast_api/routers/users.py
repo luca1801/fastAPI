@@ -4,8 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+# from sqlalchemy.orm import Session
 from fast_api.database.database import get_session
 from fast_api.models.users import UserBase
 from fast_api.schemas.schemas import (
@@ -22,7 +23,7 @@ from fast_api.security.security import (
 
 router = APIRouter(prefix='/users', tags=['users'])
 
-T_Session = Annotated[Session, Depends(get_session)]
+T_Session = Annotated[AsyncSession, Depends(get_session)]
 T_Current_User = Annotated[UserBase, Depends(get_current_user)]
 
 # Definindo um endpoint com o endereço / acessível pelo método HTTP GET
@@ -39,9 +40,9 @@ T_Current_User = Annotated[UserBase, Depends(get_current_user)]
 @router.post(
     '/', status_code=HTTPStatus.CREATED, response_model=UserSchemaPublic
 )
-def create_user(user: UserSchema, session: T_Session):
+async def create_user(user: UserSchema, session: T_Session):
     # session = next(get_session())
-    db_user = session.scalar(
+    db_user = await session.scalar(
         select(UserBase).where(
             (UserBase.username == user.username)
             | (UserBase.email == user.email)
@@ -64,8 +65,8 @@ def create_user(user: UserSchema, session: T_Session):
         password=get_password_hash(user.password),
     )
     session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
+    await session.commit()
+    await session.refresh(new_user)
     new_user = UserSchemaPublic.model_validate(new_user)
     # session.close()
     return new_user
@@ -82,16 +83,23 @@ def create_user(user: UserSchema, session: T_Session):
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
-def get_users(
+async def get_users(
     session: T_Session,
     current_user: T_Current_User,
     filter_users: Annotated[FilterPage, Query()],
 ):
-    users = session.scalars(
+    # if current_user is None:
+    #     raise HTTPException(
+    #         status_code=HTTPStatus.FORBIDDEN,
+    #         detail='Login required to access this resource',
+    #     )
+    users = await session.scalars(
         select(UserBase).limit(filter_users.limit).offset(filter_users.offset)
-    ).all()
+    )
+    # users = users.all()
     # users = UserList.model_validate(users)
     return {'users': users}
+    # return users
 
 
 @router.put(
@@ -99,7 +107,7 @@ def get_users(
     status_code=HTTPStatus.OK,
     response_model=UserSchemaPublic,
 )
-def update_user(
+async def update_user(
     user: UserSchema,
     user_id: int,
     session: T_Session,
@@ -114,11 +122,11 @@ def update_user(
         current_user.username = user.username
         current_user.email = user.email
         current_user.password = get_password_hash(user.password)
-        session.commit()
-        session.refresh(current_user)
+        await session.commit()
+        await session.refresh(current_user)
         return UserSchemaPublic.model_validate(current_user)
     except IntegrityError:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
             detail='Username or email already exists',
@@ -131,7 +139,7 @@ def update_user(
     status_code=HTTPStatus.OK,
     response_model=MessageSchema,
 )
-def delete_user(
+async def delete_user(
     user_id: int,
     session: T_Session,
     current_user: T_Current_User,
@@ -141,33 +149,6 @@ def delete_user(
             status_code=HTTPStatus.FORBIDDEN,
             detail='You do not have permission to delete this user',
         )
-    session.delete(current_user)
-    session.commit()
+    await session.delete(current_user)
+    await session.commit()
     return {'message': 'User deleted successfully'}
-
-
-# Oauth2 é um protocolo aberto para autorização, para esquema
-# de credenciais, o fastiapi conta com o OAuth2PasswordRequestForm
-# @router.post('/token', response_model=Token)
-# def login_for_acess_token(
-#     form_data: OAuth2PasswordRequestForm = Depends(),
-#     session: Session = Depends(get_session),
-# ):
-#     user = session.scalar(
-#         select(UserBase).where(UserBase.email == form_data.username)
-#     )
-
-#     if not user:
-#         raise HTTPException(
-#             status_code=HTTPStatus.UNAUTHORIZED,
-#             detail='Incorrect username or password',
-#             headers={'WWW-Authenticate': 'Bearer'},
-#         )
-#     if not verify_password(form_data.password, user.password):
-#         raise HTTPException(
-#             status_code=HTTPStatus.UNAUTHORIZED,
-#             detail='Incorrect username or password',
-#             headers={'WWW-Authenticate': 'Bearer'},
-#         )
-#     access_token = create_access_token(data={'sub': user.email})
-#     return {'access_token': access_token, 'token_type': 'bearer'}

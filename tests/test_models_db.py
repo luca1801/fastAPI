@@ -1,6 +1,8 @@
 # Importa asdict para converter objetos dataclass em dicionários
 from dataclasses import asdict
 
+import pytest
+
 # Importa select do SQLAlchemy para criar queries de seleção no banco de dados
 from sqlalchemy import select
 
@@ -9,7 +11,8 @@ from fast_api.models import users
 
 
 # Função de teste que valida a criação de um novo usuário no banco de dados
-def teste_criar_usuario_deve_retornar_usuario_criado(
+@pytest.mark.asyncio
+async def teste_criar_usuario_no_banco_retorna_usuario_criado(
     # Fixture que fornece uma sessão do banco de dados em memória
     session_init,
     # Fixture que fornece a função para mockar a data de criação
@@ -28,11 +31,11 @@ def teste_criar_usuario_deve_retornar_usuario_criado(
         # Adiciona o novo usuário à sessão do banco de dados
         session_init.add(new_user)
         # Confirma a transação e persiste o usuário no banco de dados
-        session_init.commit()
+        await session_init.commit()
 
         # Busca o usuário criado no banco de dados usando uma
         # query SELECT
-        user = session_init.scalar(
+        user = await session_init.scalar(
             # Seleciona o usuário com username igual a 'testuser'
             select(users.UserBase).where(users.UserBase.username == 'testuser')
         )

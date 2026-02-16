@@ -1,4 +1,4 @@
-from http import HTTPStatus
+# from http import HTTPStatus
 
 # def teste_criar_usuario_deve_retornar_usuario_criado(client):
 #     # client = TestClient(app)  # Arrange
@@ -114,51 +114,51 @@ from http import HTTPStatus
 #     }  # Assert
 
 
-def teste_login_usuario_deve_retornar_token(client, create_user):
-    user = create_user('lucas', 'lucas@gmail.com', 'secret')
-    response = client.post(
-        '/auth/token',
-        data={
-            'username': user.email,
-            'password': user.clean_password,
-        },
-    )  # Act
-    token = response.json()
+# def teste_login_usuario_deve_retornar_token(client, create_user):
+#     user = create_user('lucas', 'lucas@gmail.com', 'secret')
+#     response = client.post(
+#         '/auth/token',
+#         data={
+#             'username': user.email,
+#             'password': user.clean_password,
+#         },
+#     )  # Act
+#     token = response.json()
 
-    assert response.status_code == HTTPStatus.OK  # Assert
-    assert 'access_token' in token  # Assert
-    assert token['token_type'] == 'bearer'  # Assert
-
-
-def teste_criar_usuario_deve_retornar_erro_para_usuario_existente(
-    client, generate_token
-):
-    response = client.post(
-        '/users',
-        headers={'Authorization': f'Bearer {generate_token[1]}'},
-        json={
-            'username': 'testuser',
-            'email': 'testuser2@example.com',
-            'password': 'testpassword',
-        },
-    )  # Act
-
-    assert response.status_code == HTTPStatus.CONFLICT  # Assert
-    assert response.json() == {'detail': 'Username already exists'}  # Assert
+#     assert response.status_code == HTTPStatus.OK  # Assert
+#     assert 'access_token' in token  # Assert
+#     assert token['token_type'] == 'bearer'  # Assert
 
 
-def teste_criar_usuario_deve_retornar_erro_para_email_existente(
-    client, generate_token
-):
-    response = client.post(
-        '/users',
-        headers={'Authorization': f'Bearer {generate_token[1]}'},
-        json={
-            'username': 'testuser2',
-            'email': 'testuser@example.com',
-            'password': 'testpassword',
-        },
-    )  # Act
+# def teste_criar_usuario_deve_retornar_erro_para_usuario_existente(
+#     client, generate_token
+# ):
+#     response = client.post(
+#         '/users',
+#         headers={'Authorization': f'Bearer {generate_token[1]}'},
+#         json={
+#             'username': 'testuser',
+#             'email': 'testuser2@example.com',
+#             'password': 'testpassword',
+#         },
+#     )  # Act
 
-    assert response.status_code == HTTPStatus.CONFLICT  # Assert
-    assert response.json() == {'detail': 'Email already exists'}  # Assert
+#     assert response.status_code == HTTPStatus.CONFLICT  # Assert
+#     assert response.json() == {'detail': 'Username already exists'}  # Assert
+
+
+# def teste_criar_usuario_deve_retornar_erro_para_email_existente(
+#     client, generate_token
+# ):
+#     response = client.post(
+#         '/users',
+#         headers={'Authorization': f'Bearer {generate_token[1]}'},
+#         json={
+#             'username': 'testuser2',
+#             'email': 'testuser@example.com',
+#             'password': 'testpassword',
+#         },
+#     )  # Act
+
+#     assert response.status_code == HTTPStatus.CONFLICT  # Assert
+#     assert response.json() == {'detail': 'Email already exists'}  # Assert

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from typing import Annotated
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException
@@ -7,7 +8,9 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import DecodeError, decode, encode
 from pwdlib import PasswordHash
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+
+# from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_api.config.settings import settings
 from fast_api.database.database import get_session
@@ -16,6 +19,7 @@ from fast_api.models.users import UserBase
 pwd_context = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
+T_Session = Annotated[AsyncSession, Depends(get_session)]
 
 
 def get_password_hash(password: str) -> str:
@@ -39,8 +43,8 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def get_current_user(
-    session: Session = Depends(get_session),
+async def get_current_user(
+    session: T_Session,
     token: str = Depends(oauth2_scheme),
 ):
     credentials_exception = HTTPException(
@@ -58,7 +62,9 @@ def get_current_user(
     except DecodeError:
         raise credentials_exception
 
-    user = session.scalar(select(UserBase).where(UserBase.email == email))
+    user = await session.scalar(
+        select(UserBase).where(UserBase.email == email)
+    )
     if user is None:
         raise credentials_exception
     return user

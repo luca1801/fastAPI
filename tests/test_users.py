@@ -23,7 +23,7 @@ def teste_criar_usuario_deve_retornar_usuario_criado(client):
     assert response.json() == usuario_response  # Assert
 
 
-def teste_deve_listar_usuarios(client, create_user, generate_token):
+def teste_deve_listar_usuarios(client, generate_token):
     # create_user.user = create_user('lucas', 'lucas@gmail.com', 'secret')
     # generate_token.user.username = 'lucas'
     # generate_token.user.password = 'secret'
@@ -39,7 +39,7 @@ def teste_deve_listar_usuarios(client, create_user, generate_token):
 
 
 def teste_atualizar_usuario_deve_retornar_usuario_atualizado(
-    client, create_user, generate_token
+    client, generate_token
 ):
     # create_user('lucas', 'lucas@gmail.com', 'secret')
     response = client.put(

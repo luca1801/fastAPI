@@ -9,8 +9,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
+# from sqlalchemy.orm import Session
 from fast_api.database.database import get_session
 from fast_api.models.users import UserBase
 from fast_api.schemas.schemas import (
@@ -22,18 +23,18 @@ from fast_api.security.security import (
 )
 
 router = APIRouter(prefix='/auth', tags=['auth'])
-T_Session = Annotated[Session, Depends(get_session)]
+T_Session = Annotated[AsyncSession, Depends(get_session)]
 T_Auth_Form = Annotated[OAuth2PasswordRequestForm, Depends()]
 
 
 # Oauth2 é um protocolo aberto para autorização, para esquema
 # de credenciais, o fastiapi conta com o OAuth2PasswordRequestForm
 @router.post('/token', response_model=Token)
-def login_for_acess_token(
+async def login_for_acess_token(
     form_data: T_Auth_Form,
     session: T_Session,
 ):
-    user = session.scalar(
+    user = await session.scalar(
         select(UserBase).where(UserBase.email == form_data.username)
     )
 

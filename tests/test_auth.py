@@ -1,8 +1,11 @@
 from http import HTTPStatus
 
+import pytest
 
-def teste_login_usuario_deve_retornar_token(client, create_user):
-    user = create_user('lucas', 'lucas@gmail.com', 'secret')
+
+@pytest.mark.asyncio
+async def teste_login_usuario_deve_retornar_token(client, create_user):
+    user = await create_user('lucas', 'lucas@gmail.com', 'secret')
     response = client.post(
         '/auth/token',
         data={

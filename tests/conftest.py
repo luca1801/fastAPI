@@ -6,15 +6,16 @@ from datetime import datetime
 
 # Importa o módulo pytest para criar fixtures de teste
 import pytest
+import pytest_asyncio
 
 # Importa o cliente de teste do FastAPI para fazer requisições HTTP simuladas
 from fastapi.testclient import TestClient
 
 # Importa a função para criar engines de conexão com o banco de dados
-from sqlalchemy import create_engine, event
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # Importa a sessão do SQLAlchemy para gerenciar transações do banco de dados
-from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 # Importa a aplicação FastAPI principal
@@ -28,18 +29,27 @@ from fast_api.security.security import get_password_hash
 
 
 # Função que inicializa uma sessão de BD para testes
-@pytest.fixture
-def session_init():
+@pytest_asyncio.fixture
+async def session_init():
     # Cria um engine SQLAlchemy com banco de dados
     # em memória (não persistente)
-    engine = create_engine(
-        'sqlite:///:memory:',
+    engine = create_async_engine(
+        'sqlite+aiosqlite:///:memory:',
         connect_args={'check_same_thread': False},
         poolclass=StaticPool,
     )
     # Cria todas as tabelas definidas no table_registry no
     # banco de dados
-    table_registry.metadata.create_all(engine)
+    # table_registry.metadata.create_all(engine)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.create_all)
+
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        yield session
+
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all)
 
     # Abre uma sessão com o banco de dados
     # with Session(engine) as session:
@@ -51,12 +61,12 @@ def session_init():
 
     # # Fecha todas as conexões abertas do engine para liberar recursos
     # engine.dispose()
-    try:
-        with Session(engine) as session:
-            yield session
-    finally:
-        table_registry.metadata.drop_all(engine)
-        engine.dispose()
+    # try:
+    #     with Session(engine) as session:
+    #         yield session
+    # finally:
+    #     table_registry.metadata.drop_all(engine)
+    #     engine.dispose()
 
 
 # Define uma fixture do pytest que fornece um cliente de teste
@@ -110,9 +120,9 @@ def mock_db_time():
 
 
 # Define uma fixture pytest que cria um usuário de teste
-@pytest.fixture
-def create_user(session_init: Session):
-    def _create_user(username: str, email: str, password: str):
+@pytest_asyncio.fixture
+async def create_user(session_init: AsyncSession):
+    async def _create_user(username: str, email: str, password: str):
 
         new_user = UserBase(
             username=username,
@@ -121,17 +131,19 @@ def create_user(session_init: Session):
         )
 
         session_init.add(new_user)
-        session_init.commit()
-        session_init.refresh(new_user)
+        await session_init.commit()
+        await session_init.refresh(new_user)
         new_user.clean_password = password
         return new_user
 
     return _create_user
 
 
-@pytest.fixture
-def generate_token(client, create_user):
-    user = create_user('testuser', 'testuser@example.com', 'testpassword')
+@pytest_asyncio.fixture
+async def generate_token(client, create_user):
+    user = await create_user(
+        'testuser', 'testuser@example.com', 'testpassword'
+    )
     response = client.post(
         '/auth/token',
         data={
