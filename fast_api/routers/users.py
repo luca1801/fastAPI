@@ -40,8 +40,15 @@ T_Current_User = Annotated[UserBase, Depends(get_current_user)]
 @router.post(
     '/', status_code=HTTPStatus.CREATED, response_model=UserSchemaPublic
 )
-async def create_user(user: UserSchema, session: T_Session):
-    # session = next(get_session())
+async def create_user(
+    user: UserSchema, current_user: T_Current_User, session: T_Session
+):
+    # # session = next(get_session())
+    # if current_user is None:
+    #     raise HTTPException(
+    #         status_code=HTTPStatus.FORBIDDEN,
+    #         detail='Login required to access this resource',
+    #     )
     db_user = await session.scalar(
         select(UserBase).where(
             (UserBase.username == user.username)
