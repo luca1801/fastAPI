@@ -5,7 +5,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def teste_login_usuario_deve_retornar_token(client, create_user):
-    user = await create_user('lucas', 'lucas@gmail.com', 'secret')
+    user = await create_user()
     response = client.post(
         '/auth/token',
         data={

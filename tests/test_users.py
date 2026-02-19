@@ -1,6 +1,8 @@
 # teste da rota de usuários do app.py usando pytest e TestClient do FastAPI
 from http import HTTPStatus
 
+import pytest
+
 from fast_api.schemas.schemas import UserSchemaPublic
 
 
@@ -121,13 +123,14 @@ def teste_update_erro_integridade_usuario_ja_existe(client, generate_token):
 def teste_criar_usuario_deve_retornar_erro_para_usuario_existente(
     client, generate_token
 ):
+    # user = create_user()
     response = client.post(
         '/users',
         headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'testuser',
-            'email': 'testuser2@example.com',
-            'password': 'testpassword',
+            'username': generate_token[0].username,
+            'email': generate_token[0].email,
+            'password': generate_token[0].clean_password,
         },
     )  # Act
 
@@ -142,11 +145,48 @@ def teste_criar_usuario_deve_retornar_erro_para_email_existente(
         '/users',
         headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'testuser2',
-            'email': 'testuser@example.com',
-            'password': 'testpassword',
+            'username': 'newuser',
+            'email': generate_token[0].email,
+            'password': generate_token[0].clean_password,
         },
     )  # Act
 
     assert response.status_code == HTTPStatus.CONFLICT  # Assert
     assert response.json() == {'detail': 'Email already exists'}  # Assert
+
+
+@pytest.mark.asyncio
+async def teste_atualizar_cadastro_com_usuario_diferente_deve_retornar_erro(
+    client, generate_token, create_other_user
+):
+    user = await create_other_user()
+    response = client.put(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+        },
+    )  # Act
+
+    assert response.status_code == HTTPStatus.FORBIDDEN  # Assert
+    assert response.json() == {
+        'detail': 'You do not have permission to update this user'
+    }
+
+
+@pytest.mark.asyncio
+async def teste_deletar_cadastro_com_usuario_diferente_deve_retornar_erro(
+    client, generate_token, create_other_user
+):
+    user = await create_other_user()
+    response = client.delete(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {generate_token[1]}'},
+    )  # Act
+
+    assert response.status_code == HTTPStatus.FORBIDDEN  # Assert
+    assert response.json() == {
+        'detail': 'You do not have permission to delete this user'
+    }

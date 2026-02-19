@@ -4,6 +4,8 @@ from contextlib import contextmanager
 # Importa datetime para trabalhar com datas e horas nos testes
 from datetime import datetime
 
+import factory
+
 # Importa o módulo pytest para criar fixtures de teste
 import pytest
 import pytest_asyncio
@@ -122,13 +124,36 @@ def mock_db_time():
 # Define uma fixture pytest que cria um usuário de teste
 @pytest_asyncio.fixture
 async def create_user(session_init: AsyncSession):
-    async def _create_user(username: str, email: str, password: str):
+    # async def _create_user(username: str, email: str, password: str):
+    async def _create_user():
+        # new_user = UserBase(
+        #     username=username,
+        #     email=email,
+        #     password=get_password_hash(password),
+        # )
+        password = 'secret'
+        new_user = UserFactory(password=get_password_hash(password))
 
-        new_user = UserBase(
-            username=username,
-            email=email,
-            password=get_password_hash(password),
-        )
+        session_init.add(new_user)
+        await session_init.commit()
+        await session_init.refresh(new_user)
+        new_user.clean_password = password
+        return new_user
+
+    return _create_user
+
+
+@pytest_asyncio.fixture
+async def create_other_user(session_init: AsyncSession):
+    # async def _create_user(username: str, email: str, password: str):
+    async def _create_user():
+        # new_user = UserBase(
+        #     username=username,
+        #     email=email,
+        #     password=get_password_hash(password),
+        # )
+        password = 'secret'
+        new_user = UserFactory(password=get_password_hash(password))
 
         session_init.add(new_user)
         await session_init.commit()
@@ -141,9 +166,7 @@ async def create_user(session_init: AsyncSession):
 
 @pytest_asyncio.fixture
 async def generate_token(client, create_user):
-    user = await create_user(
-        'testuser', 'testuser@example.com', 'testpassword'
-    )
+    user = await create_user()
     response = client.post(
         '/auth/token',
         data={
@@ -157,3 +180,14 @@ async def generate_token(client, create_user):
 @pytest.fixture
 def Settings():
     return settings
+
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = UserBase
+
+    username = factory.Sequence(lambda n: f'testuser{n}')
+    email = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
+    password = factory.LazyAttribute(
+        lambda obj: get_password_hash(f'{obj.username}@example.com')
+    )

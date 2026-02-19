@@ -1,5 +1,19 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:poetry",
-    "python-envs.defaultPackageManager": "ms-python.python:poetry",
-    "python-envs.pythonProjects": []
+  "python-envs.defaultEnvManager": "ms-python.python:poetry",
+  "python-envs.defaultPackageManager": "ms-python.python:poetry",
+  "python-envs.pythonProjects": [],
+
+  // Desativa linters antigos (Pylint, Flake8)
+  "python.linting.enabled": false,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+
+  // "python-linting.ruffEnabled": true,
+  // Ativa e configura o Ruff
+  "ruff.enable": true,
+  "editor.formatOnSave": true, // Formata automaticamente ao salvar
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit", // Corrige erros (lint) ao salvar
+    "source.organizeImports.ruff": "explicit" // Organiza imports ao salvar
+  }
 }
