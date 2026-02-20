@@ -18,7 +18,10 @@ from fast_api.models.users import UserBase
 
 pwd_context = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl='auth/token',
+    refreshUrl='auth/refresh_token',
+)
 T_Session = Annotated[AsyncSession, Depends(get_session)]
 
 

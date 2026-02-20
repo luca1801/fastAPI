@@ -19,16 +19,16 @@ from fast_api.schemas.schemas import (
 )
 from fast_api.security.security import (
     create_access_token,
+    get_current_user,
     verify_password,
 )
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 T_Session = Annotated[AsyncSession, Depends(get_session)]
 T_Auth_Form = Annotated[OAuth2PasswordRequestForm, Depends()]
+T_Current_User = Annotated[UserBase, Depends(get_current_user)]
 
 
-# Oauth2 é um protocolo aberto para autorização, para esquema
-# de credenciais, o fastiapi conta com o OAuth2PasswordRequestForm
 @router.post('/token', response_model=Token)
 async def login_for_acess_token(
     form_data: T_Auth_Form,
@@ -51,4 +51,12 @@ async def login_for_acess_token(
             headers={'WWW-Authenticate': 'Bearer'},
         )
     access_token = create_access_token(data={'sub': user.email})
+    return {'access_token': access_token, 'token_type': 'bearer'}
+
+
+@router.post('/refresh_token', response_model=Token)
+def refresh_access_token(
+    current_user: T_Current_User,
+):
+    access_token = create_access_token(data={'sub': current_user.email})
     return {'access_token': access_token, 'token_type': 'bearer'}
