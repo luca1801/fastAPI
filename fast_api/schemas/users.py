@@ -9,6 +9,7 @@ class UserSchema(BaseModel):
     username: str
     email: EmailStr
     password: str
+    empresa_id: int
     # cargo: str
     # empresa: str
 
@@ -17,6 +18,7 @@ class UserSchemaPublic(BaseModel):
     id: int
     username: str
     email: EmailStr
+    empresa_id: int
     model_config = ConfigDict(from_attributes=True)
 
     # class Config:

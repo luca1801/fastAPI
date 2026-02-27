@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # from sqlalchemy.orm import Session
 from fast_api.database.database import get_session
 from fast_api.models.users import UserBase
-from fast_api.schemas.schemas import (
+from fast_api.schemas.users import (
     FilterPage,
     MessageSchema,
     UserList,
@@ -63,6 +63,7 @@ async def create_user(user: UserSchema, session: T_Session):
         username=user.username,
         email=user.email,
         password=get_password_hash(user.password),
+        empresa_id=user.empresa_id,
     )
     session.add(new_user)
     await session.commit()

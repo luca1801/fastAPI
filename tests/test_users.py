@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import pytest
 
-from fast_api.schemas.schemas import UserSchemaPublic
+from fast_api.schemas.users import UserSchemaPublic
 
 
 def teste_criar_usuario_deve_retornar_usuario_criado(client):
@@ -40,32 +40,35 @@ def teste_deve_listar_usuarios(client, generate_token):
     assert response.json() == {'users': [user_schema]}  # Assert
 
 
-def teste_atualizar_usuario_deve_retornar_usuario_atualizado(
-    client, generate_token
+@pytest.mark.asyncio
+async def teste_atualizar_usuario_deve_retornar_usuario_atualizado(
+    client, generate_token, create_other_user
 ):
     # create_user('lucas', 'lucas@gmail.com', 'secret')
+    # user = await create_other_user()
     response = client.put(
-        '/users/1',
+        f'/users/{generate_token[0].id}',
         headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'Lucas Silva',
-            'email': 'lucas.silva@gmail.com',
-            'password': 'newsecret',
+            'username': generate_token[0].username,
+            'email': 'teste@example.com',
+            'password': generate_token[0].clean_password,
         },
     )  # Act
 
     assert response.status_code == HTTPStatus.OK  # Assert
     assert response.json() == {
-        'username': 'Lucas Silva',
-        'email': 'lucas.silva@gmail.com',
-        'id': 1,
+        'username': generate_token[0].username,
+        'email': 'teste@example.com',
+        'id': generate_token[0].id,
     }  # Assert
 
+    user = await create_other_user()
     response = client.put(
-        '/users/2',
+        f'/users/{user.id}',
         headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'Lucas Silva',
+            'username': 'lucas',
             'email': 'lucas.silva@gmail.com',
             'password': 'newsecret',
         },
@@ -92,15 +95,19 @@ def teste_deletar_usuario_deve_retornar_usuario_deletado(
     assert response.status_code == HTTPStatus.UNAUTHORIZED  # Assert
 
 
-def teste_update_erro_integridade_usuario_ja_existe(client, generate_token):
+@pytest.mark.asyncio
+async def teste_update_erro_integridade_usuario_ja_existe(
+    client, generate_token, create_other_user
+):
     # create_user('lucas', 'lucas@gmail.com', 'secret')
     # adiciona outro usuario para gerar conflito
+    user = await create_other_user()
     client.post(
         '/users',
         json={
-            'username': 'fausto',
-            'email': 'fausto@example.com',
-            'password': 'testpassword',
+            'username': user.username,
+            'email': user.email,
+            'password': 'anything',
         },
     )
     # tenta atualizar o usuario criado na fixture generate_token
@@ -108,9 +115,9 @@ def teste_update_erro_integridade_usuario_ja_existe(client, generate_token):
         f'/users/{generate_token[0].id}',
         headers={'Authorization': f'Bearer {generate_token[1]}'},
         json={
-            'username': 'fausto',
-            'email': 'testuser2@example.com',
-            'password': 'testpassword',
+            'username': user.username,
+            'email': user.email,
+            'password': 'anything',
         },
     )  # Act
 

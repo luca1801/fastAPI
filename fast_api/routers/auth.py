@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # from sqlalchemy.orm import Session
 from fast_api.database.database import get_session
 from fast_api.models.users import UserBase
-from fast_api.schemas.schemas import (
+from fast_api.schemas.users import (
     Token,
 )
 from fast_api.security.security import (

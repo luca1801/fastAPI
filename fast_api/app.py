@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from fast_api.routers import auth, users
+from fast_api.routers import auth, company, users
 
 app = FastAPI()  # iniciando uma aplicação FastAPI
 
@@ -9,3 +9,4 @@ app = FastAPI()  # iniciando uma aplicação FastAPI
 # Incluir rotas
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(company.router)

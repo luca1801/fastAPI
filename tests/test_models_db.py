@@ -25,6 +25,7 @@ async def teste_criar_usuario_no_banco_retorna_usuario_criado(
         new_user = users.UserBase(
             username='testuser',
             email='testuser@example.com',
+            empresa_id=1,  # Empresa associada (deve existir no BD de teste)
             password='testpassword',
         )
 
@@ -47,4 +48,5 @@ async def teste_criar_usuario_no_banco_retorna_usuario_criado(
             'email': 'testuser@example.com',  # Email fornecido
             'password': 'testpassword',  # Senha fornecida
             'created_at': time,  # Data de criação mockada (2026-01-01)
+            'empresa_id': 1,  # Empresa associada (deve existir no BD de teste)
         }
