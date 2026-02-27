@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,7 @@ from fast_api.schemas.company import (
     Company,
     CompanySchema,
 )
+from fast_api.schemas.users import FilterPage
 from fast_api.security.security import (
     get_current_user,
 )
@@ -55,3 +56,26 @@ async def create_company(
             detail='Failed to create company',
         )
     return new_company
+
+
+@router.get('/', status_code=HTTPStatus.OK, response_model=list[CompanySchema])
+async def list_companies(
+    session: T_Session,
+    current_user: T_Current_User,
+    filter_users: Annotated[FilterPage, Query()],
+):
+    companies = await session.scalars(
+        select(CompanyModel)
+        .limit(filter_users.limit)
+        .offset(filter_users.offset)
+    )
+    # result = await session.execute(select(CompanyModel))
+    # companies = result.scalars().all()
+    # return {'empresas': companies}
+    # companies2 = (
+    #     CompanySchema.model_validate(company) for company in companies
+    # )
+    # print(f'Listed companies: {list(companies)}')
+    company = [CompanySchema.model_validate(company) for company in companies]
+    return company
+    # return {'empresas': companies}

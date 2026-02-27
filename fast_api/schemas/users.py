@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -9,7 +11,7 @@ class UserSchema(BaseModel):
     username: str
     email: EmailStr
     password: str
-    empresa_id: int
+    empresa_id: Optional[int] = None
     # cargo: str
     # empresa: str
 
@@ -18,7 +20,7 @@ class UserSchemaPublic(BaseModel):
     id: int
     username: str
     email: EmailStr
-    empresa_id: int
+    empresa_id: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
     # class Config:

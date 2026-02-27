@@ -35,7 +35,7 @@ class UserBase:
         init=False, server_default=func.now()
     )
     empresa_id: Mapped[int] = mapped_column(
-        ForeignKey('companies.id'), nullable=False
+        ForeignKey('companies.id'), nullable=True
     )
     # empresa_name: Mapped[str] = mapped_column(
     #     ForeignKey('companies.name'), nullable=False

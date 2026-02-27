@@ -4,11 +4,11 @@ from contextlib import contextmanager
 # Importa datetime para trabalhar com datas e horas nos testes
 from datetime import datetime
 
-import factory
-
 # Importa o módulo pytest para criar fixtures de teste
 import pytest
 import pytest_asyncio
+from factory.base import Factory
+from factory.declarations import LazyAttribute, Sequence
 
 # Importa o cliente de teste do FastAPI para fazer requisições HTTP simuladas
 from fastapi.testclient import TestClient
@@ -24,9 +24,11 @@ from sqlalchemy.pool import StaticPool
 from fast_api.app import app
 from fast_api.config.settings import settings
 from fast_api.database.database import get_session
+from fast_api.models.company import Company
 
 # Importa o registry de tabelas para criar as tabelas no banco de dados
-from fast_api.models.users import UserBase, table_registry
+from fast_api.models.registry import table_registry
+from fast_api.models.users import UserBase
 from fast_api.security.security import get_password_hash
 
 
@@ -121,6 +123,19 @@ def mock_db_time():
     return _mock_db_time
 
 
+@pytest_asyncio.fixture
+async def create_company(session_init: AsyncSession):
+    async def _create_company():
+
+        new_company = CompanyFactory()
+        session_init.add(new_company)
+        await session_init.commit()
+        await session_init.refresh(new_company)
+        return new_company
+
+    return _create_company
+
+
 # Define uma fixture pytest que cria um usuário de teste
 @pytest_asyncio.fixture
 async def create_user(session_init: AsyncSession):
@@ -132,7 +147,9 @@ async def create_user(session_init: AsyncSession):
         #     password=get_password_hash(password),
         # )
         password = 'secret'
-        new_user = UserFactory(password=get_password_hash(password))
+        new_user = UserFactory(
+            empresa_id=None, password=get_password_hash(password)
+        )
 
         session_init.add(new_user)
         await session_init.commit()
@@ -153,7 +170,9 @@ async def create_other_user(session_init: AsyncSession):
         #     password=get_password_hash(password),
         # )
         password = 'secret'
-        new_user = UserFactory(password=get_password_hash(password))
+        new_user = UserFactory(
+            empresa_id=None, password=get_password_hash(password)
+        )
 
         session_init.add(new_user)
         await session_init.commit()
@@ -182,12 +201,24 @@ def Settings():
     return settings
 
 
-class UserFactory(factory.Factory):
+class UserFactory(Factory):
     class Meta:
         model = UserBase
 
-    username = factory.Sequence(lambda n: f'testuser{n}')
-    email = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
-    password = factory.LazyAttribute(
+    username = Sequence(lambda n: f'testuser{n}')
+    email = LazyAttribute(lambda obj: f'{obj.username}@example.com')
+    password = LazyAttribute(
         lambda obj: get_password_hash(f'{obj.username}@example.com')
     )
+    # id = LazyAttribute(
+    #     lambda obj: f'{obj.id}')
+
+
+class CompanyFactory(Factory):
+    class Meta:
+        model = Company
+
+    name = Sequence(lambda n: f'Company {n}')
+    service = Sequence(lambda n: f'Service {n}')
+    location = Sequence(lambda n: f'Location {n}')
+    ramal = Sequence(lambda n: f'Ramal {n}')
